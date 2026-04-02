@@ -21,7 +21,7 @@ Nao e um agregador generico. E um filtro inteligente que conecta noticias ao tra
 
 ## Configuracao
 
-Leia `${CLAUDE_PLUGIN_ROOT}/config.local.md` para obter:
+Leia `plugin-pique-news.local.md` na raiz do projeto (working directory) para obter:
 - Evolution API URL, API Key, Instance
 - WhatsApp Group ID
 
