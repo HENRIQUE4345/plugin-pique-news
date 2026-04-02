@@ -21,10 +21,11 @@ Nao e um agregador generico. E um filtro inteligente que conecta noticias ao tra
 
 ## Configuracao
 
-- **Evolution API URL:** ${user_config.evolution_api_url}
-- **Evolution API Key:** ${user_config.evolution_api_key}
-- **Evolution Instance:** ${user_config.evolution_instance}
-- **WhatsApp Group:** ${user_config.whatsapp_group_id}
+Leia `${CLAUDE_PLUGIN_ROOT}/config.local.md` para obter:
+- Evolution API URL, API Key, Instance
+- WhatsApp Group ID
+
+Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
 - **Cerebro Yabadoo:** `projetos/yabadoo/` do MEU-CEREBRO
 
@@ -177,15 +178,19 @@ Monte a mensagem de texto formatada para WhatsApp (nao suporta HTML):
 
 Use o Bash tool para fazer a chamada:
 
+Use os valores lidos do `config.local.md` no Passo 0:
+
 ```bash
-curl -s -X POST "${user_config.evolution_api_url}/message/sendText/${user_config.evolution_instance}" \
+curl -s -X POST "EVOLUTION_URL/message/sendText/EVOLUTION_INSTANCE" \
   -H "Content-Type: application/json" \
-  -H "apikey: ${user_config.evolution_api_key}" \
+  -H "apikey: EVOLUTION_API_KEY" \
   -d '{
-    "number": "${user_config.whatsapp_group_id}",
+    "number": "WHATSAPP_GROUP_ID",
     "text": "MENSAGEM_AQUI"
   }'
 ```
+
+Substitua os placeholders pelos valores reais do config.local.md.
 
 **IMPORTANTE:**
 - Escape aspas duplas na mensagem com `\"`
