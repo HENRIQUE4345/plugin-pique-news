@@ -1,0 +1,13 @@
+{
+  "name": "pique-news-marketplace",
+  "owner": {
+    "name": "Henrique Carvalho"
+  },
+  "plugins": [
+    {
+      "name": "plugin-pique-news",
+      "source": "./",
+      "description": "Briefing diario automatizado — scrapa portais de noticias, cruza com cerebro Pique/Yabadoo, gera HTML visual e envia resumo no WhatsApp."
+    }
+  ]
+}
