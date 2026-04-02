@@ -19,11 +19,16 @@ NOTICIAS FRESCAS (ultimas 24h)  x  CONTEXTO PIQUE (clientes, catalogo, estrategi
 
 Nao e um agregador generico. E um filtro inteligente que conecta noticias ao trabalho real.
 
-## Configuracao
+## Passo 0 — Carregar configuracao
 
-Leia `plugin-pique-news.local.md` na raiz do projeto (working directory) para obter:
-- Evolution API URL, API Key, Instance
-- WhatsApp Group ID
+Antes de tudo, leia o arquivo de configuracao da Evolution API.
+Tente nesta ordem ate encontrar:
+1. `plugin-pique-news.local.md` (na raiz do working directory)
+2. `config.local.md` (na raiz do working directory)
+3. Glob por `**/plugin-pique-news.local.md`
+
+O arquivo contem: Evolution API URL, API Key, Instance e WhatsApp Group ID.
+Se NAO encontrar, continue o briefing normalmente mas avise no final que o envio WhatsApp sera pulado.
 
 Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
