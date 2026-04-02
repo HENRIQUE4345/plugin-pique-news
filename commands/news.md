@@ -268,28 +268,39 @@ Monte a mensagem de texto formatada para WhatsApp (nao suporta HTML):
 
 ### Enviar via Evolution API
 
-Use o Bash tool para fazer a chamada:
+**IMPORTANTE — Encoding UTF-8:** No Windows, o curl inline quebra emojis. SEMPRE usar o metodo abaixo (arquivo temporario):
 
-Use os valores lidos do `config.local.md` no Passo 0:
+1. Use o **Write tool** para criar um arquivo temporario `_whatsapp_msg.json` na raiz do working directory:
+
+```json
+{
+  "number": "WHATSAPP_GROUP_ID",
+  "text": "MENSAGEM_COMPLETA_AQUI"
+}
+```
+
+2. Use o **Bash tool** com `--data-binary @arquivo` para enviar:
 
 ```bash
 curl -s -X POST "EVOLUTION_URL/message/sendText/EVOLUTION_INSTANCE" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: application/json; charset=utf-8" \
   -H "apikey: EVOLUTION_API_KEY" \
-  -d '{
-    "number": "WHATSAPP_GROUP_ID",
-    "text": "MENSAGEM_AQUI"
-  }'
+  --data-binary "@_whatsapp_msg.json"
+```
+
+3. Apague o arquivo temporario apos envio:
+
+```bash
+rm _whatsapp_msg.json
 ```
 
 Substitua os placeholders pelos valores reais do config.local.md.
 
-**IMPORTANTE:**
-- Escape aspas duplas na mensagem com `\"`
-- Quebre linhas com `\n`
+**Regras de formatacao:**
 - Use `*texto*` para negrito no WhatsApp
 - Use `_texto_` para italico
-- Se a mensagem for muito longa (>4000 chars), divida em 2 mensagens com 2s de delay entre elas
+- Quebre linhas com `\n` dentro do JSON
+- Se a mensagem for muito longa (>4000 chars), divida em 2 arquivos e envie com 2s de delay entre eles
 
 ---
 
