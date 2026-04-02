@@ -50,6 +50,7 @@ O briefing NAO e um agregador. E um filtro inteligente. Relevancia e definida pe
 - Noticia sobre IA que muda o mercado de consultoria tech
 - Movimento de concorrente direto ou indireto
 - Regulamentacao que afeta PMEs ou tech no Brasil
+- Desdobramento de tendencia ativa (tema que apareceu em 2+ briefings anteriores)
 
 ### RELEVANTE (incluir normal)
 - Tendencia emergente que pode virar oportunidade em 3-6 meses
@@ -62,6 +63,7 @@ O briefing NAO e um agregador. E um filtro inteligente. Relevancia e definida pe
 - Rumores sem confirmacao
 - Conteudo duplicado entre fontes
 - Tech hype sem aplicacao pratica pro nosso publico
+- Noticia ja reportada em briefing anterior sem nenhum desdobramento novo
 
 ## Cruzamento com cerebro
 
@@ -78,11 +80,32 @@ Cada noticia relevante deve ser cruzada com:
 - **WhatsApp:** versao texto com emojis, formatacao WhatsApp (*negrito*, _italico_)
 - **Maximo:** 15 noticias por briefing, 1 manchete destaque, 1-3 gaps
 
-## Historico
+## Historico e inteligencia acumulativa
 
 Os briefings ficam salvos em `pique/briefings/YYYY-MM-DD-pique-news.html`.
-Isso permite:
-- Rastrear tendencias ao longo do tempo
-- Verificar se um gap identificado ja foi endereacado
-- Alimentar o /social-radar com dados historicos
-- Referencia em reunioes estrategicas
+
+### Leitura de briefings anteriores
+
+O comando `/pique-news:news` le automaticamente os 3 briefings mais recentes antes de buscar noticias novas (Passo 1.5). Isso permite:
+
+1. **Deduplicacao:** noticias ja reportadas nao se repetem — a menos que tenham desdobramento novo
+2. **Tendencias:** temas que aparecem em 2+ briefings sao nomeados como TENDENCIA e acompanhados com timeline
+3. **Gaps:** oportunidades identificadas sao rastreadas entre briefings ate serem resolvidas ou escaladas
+
+### Regras de continuidade
+
+- **Noticia repetida sem novidade:** descartar (classificar como FRIO)
+- **Noticia repetida COM desdobramento:** incluir com tag "CONTINUACAO de DD/MM"
+- **Tema em 2+ briefings:** promover a TENDENCIA com nome e timeline
+- **Gap aberto 3+ dias sem acao:** escalar como GAP CRONICO — sugerir inclusao no planejamento semanal
+- **Gap resolvido:** marcar como resolvido no metadata e no HTML
+
+### Metadata no HTML
+
+Cada briefing inclui um bloco `<!-- PIQUE-NEWS-METADATA -->` antes do `</body>` com dados estruturados (data, manchete, tendencias, gaps, noticias-chave). Isso permite leitura rapida sem parsear o HTML inteiro.
+
+### Alimenta outros rituais
+
+- `/social-radar` pode cruzar tendencias do news com trends de social media
+- `/pique:review-semanal` pode referenciar gaps identificados na semana
+- `/pique:planejamento-semanal` pode incluir gaps cronicos como tasks

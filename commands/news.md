@@ -32,7 +32,7 @@ Se NAO encontrar, continue o briefing normalmente mas avise no final que o envio
 
 Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
-- **Cerebro Yabadoo:** `projetos/yabadoo/` do MEU-CEREBRO
+- **Cerebro Yabadoo:** `pique/produto-yabadoo/` do MEU-CEREBRO
 
 ---
 
@@ -44,13 +44,47 @@ Leia TUDO em paralelo para ter contexto de cruzamento:
 2. `pique/clientes/pipeline.md` — prospects e clientes ativos
 3. `pique/catalogo/componentes.md` — servicos oferecidos
 4. `pique/identidade/modelo-de-negocio.md` — camadas do negocio
-5. `projetos/yabadoo/yabadoo.md` — produto, visao, roadmap
-6. `projetos/yabadoo/roadmap-metas-2026.md` — metas do ano
+5. `pique/produto-yabadoo/yabadoo.md` — produto, visao, roadmap
+6. `pique/produto-yabadoo/roadmap-metas-2026.md` — metas do ano
 7. `conhecimento/ia/` — glob e ler titulos dos arquivos (temas que acompanhamos)
 8. `conhecimento/marketing/` — glob e ler titulos dos arquivos
 9. `projetos/marca-iairique/topicos-conteudo-henrique.md` — angulos de conteudo
 
 Guarde os pontos-chave em memoria de trabalho. Voce vai precisar pra cruzar com as noticias.
+
+---
+
+## Passo 1.5 — Carregar memoria de briefings anteriores
+
+Antes de buscar noticias novas, leia o que ja foi reportado:
+
+1. **Glob** `pique/briefings/*-pique-news.html` — liste todos os briefings existentes.
+2. **Leia os 3 mais recentes** (por data no nome do arquivo). Se houver menos de 3, leia todos. Se nao houver nenhum, pule este passo inteiro.
+3. **De cada HTML, extraia:**
+   - Bloco `<!-- PIQUE-NEWS-METADATA ... -->` (se existir) — parse direto dele
+   - Se NAO tiver bloco de metadata (briefings antigos): ler os textos dentro de `.news-headline`, `.news-insight`, `.gap-title` + `.gap-action` do HTML
+4. **Monte 3 listas de trabalho:**
+
+### a) Noticias ja reportadas (titulos dos ultimos 3 dias)
+
+Usar pra DEDUPLICAR no Passo 3:
+- Se a mesma noticia (mesmo tema/evento) aparecer no scrape de hoje, NAO incluir de novo
+- EXCECAO: se tem DESDOBRAMENTO NOVO (update, reacao do mercado, dados novos), incluir com tag "CONTINUACAO de DD/MM: [o que mudou]"
+
+### b) Tendencias em formacao (temas que apareceram em 2+ briefings)
+
+- Se o mesmo tema aparece em dias diferentes (ex: "computer use" em D-1 e D-2), e uma TENDENCIA
+- Nomear explicitamente e acompanhar evolucao
+- Formato: "TENDENCIA: [nome] — Dia 1 (DD/MM): [o que aconteceu] → Dia 2 (DD/MM): [o que evoluiu] → Hoje: [novo desenvolvimento]"
+
+### c) Gaps e acoes pendentes (gaps dos briefings anteriores)
+
+- Listar TODOS os gaps abertos dos ultimos 3 briefings
+- No Passo 3, verificar se alguma noticia de hoje RESOLVE ou AVANCA algum gap anterior
+- Se um gap apareceu em 3+ briefings sem acao concreta, ESCALAR: marcar como "GAP CRONICO" e sugerir inclusao no planejamento semanal
+- Maximo 3 gaps cronicos por briefing — priorizar os mais antigos
+
+Esse contexto vai ser usado nos Passos 3, 4 e 5.
 
 ---
 
@@ -107,15 +141,34 @@ Para CADA noticia coletada, avalie:
 | **RELEVANTE** | Bom saber, conecta com algum tema do cerebro | Incluir normal |
 | **FRIO** | Generico, sem conexao com nosso trabalho | Descartar |
 
-### Cruzamento obrigatorio
+### Cruzamento VERIFICAVEL (obrigatorio)
 
-Para cada noticia QUENTE ou RELEVANTE, identifique:
+Para cada noticia QUENTE ou RELEVANTE, o cruzamento NAO pode ser generico. Cada insight deve apontar ARQUIVO + SECAO + ACAO CONCRETA:
 
-1. **Conexao Pique:** como isso afeta nossos clientes, servicos ou estrategia?
-2. **Conexao Yabadoo:** como isso se relaciona com o produto/roadmap?
-3. **Conexao @iairique:** isso vira conteudo? Qual angulo?
-4. **Gap identificado:** algo que o mercado esta fazendo e a Pique NAO faz?
-5. **Oportunidade:** algo que podemos agir em cima?
+1. **Conexao Pique — apontar arquivo:**
+   - Se afeta servico: "`catalogo/componentes.md` — componente #X pode [acao]"
+   - Se afeta cliente: "`clientes/pipeline.md` — prospect [nome] se beneficia porque [razao]"
+   - Se afeta estrategia: "`estrategia/roadmap.md` — fase [X] precisa considerar [impacto]"
+   - Se NAO conecta com nenhum arquivo especifico: admitir "sem conexao direta com Pique"
+
+2. **Conexao Yabadoo — apontar roadmap:**
+   - Se afeta produto: "`produto-yabadoo/roadmap-metas-2026.md` — fase [X], [impacto concreto]"
+   - Se afeta posicionamento: "`produto-yabadoo/yabadoo.md` — secao [X], [como muda]"
+   - Se NAO conecta: admitir "sem conexao direta com Yabadoo"
+
+3. **Conexao @iairique — apontar topico:**
+   - Se vira conteudo: "`topicos-conteudo-henrique.md` — topico [numero]: [nome]. Formato sugerido: [carrossel/reels/video]. Hook: [frase de abertura]"
+   - Se NAO vira conteudo: omitir (nao forcar conexao)
+
+4. **Continuidade com briefings anteriores** (obrigatorio se Passo 1.5 executou):
+   - E repeticao? → NAO incluir. Excecao: desdobramento novo, marcar "CONTINUACAO de DD/MM: [o que mudou]"
+   - Faz parte de tendencia? → Marcar "TENDENCIA [nome] — dia [N]: [evolucao]"
+   - Resolve/avanca gap anterior? → Marcar "ATUALIZA gap de DD/MM: [nome do gap] — [status novo]"
+
+5. **Gap identificado — acao concreta:**
+   - Cada gap deve ter: QUEM faz + O QUE faz + SUGESTAO de quando
+   - Exemplo bom: "→ Henrique: criar draft do componente AI Search em `catalogo/componentes.md`. Marco: incluir no pitch de prospeccao ate sexta."
+   - Exemplo ruim: "→ Ficar de olho nessa tendencia." (vago demais — reescrever com acao concreta)
 
 ### Selecao final
 
@@ -138,6 +191,32 @@ Gere o HTML final substituindo os placeholders:
 - Categorias: repita os blocos `.news-card` dentro de cada section
 - Gaps: repita os blocos `.gap-card` na section de gaps
 - Remova sections de categorias que nao tiveram noticias relevantes
+
+### Secao extra: Tendencias em Andamento
+
+Se o Passo 1.5 identificou tendencias (tema em 2+ briefings), adicionar uma section `#tendencias` no HTML ENTRE a ultima categoria e os gaps. Usar o bloco de tendencia do template (`templates/briefing.html` section `#tendencias`). Cada tendencia mostra: nome, timeline (dia 1 → dia 2 → hoje), e status atual.
+
+Se NAO houver tendencias (primeiro briefing ou nenhum tema repetido), omitir a section inteira.
+
+### Bloco de metadata (obrigatorio)
+
+Antes do `</body>`, SEMPRE inserir um bloco de metadata em comentario HTML para facilitar leitura por briefings futuros:
+
+```html
+<!-- PIQUE-NEWS-METADATA
+data: YYYY-MM-DD
+total: [numero de noticias curadas]
+manchete: [titulo da manchete principal]
+tendencias-ativas: [lista separada por virgula, ou "nenhuma"]
+gaps-abertos: [lista separada por |, ou "nenhum"]
+gaps-resolvidos: [lista separada por |, ou "nenhum"]
+noticias-chave: [titulos curtos separados por |]
+-->
+```
+
+Esse bloco permite que o Passo 1.5 de execucoes futuras leia apenas as ultimas linhas do HTML em vez do arquivo inteiro.
+
+### Destino do arquivo
 
 **Destino do arquivo:** `pique/briefings/{{YYYY-MM-DD}}-pique-news.html`
 
@@ -175,6 +254,14 @@ Monte a mensagem de texto formatada para WhatsApp (nao suporta HTML):
 ⚡ *GAPS & OPORTUNIDADES*
 ▸ {{gap titulo}} — {{acao sugerida}}
 [repetir]
+
+📈 *TENDENCIAS (acompanhamento)*
+▸ {{tendencia}} — dia {{N}}: {{evolucao 1 linha}}
+[repetir para cada tendencia ativa, ou omitir secao se nao houver]
+
+✅ *GAPS ATUALIZADOS*
+▸ {{gap}} — {{novo status: resolvido/avancou/cronico}}
+[repetir para cada gap com mudanca de status, ou omitir secao se nenhum gap mudou]
 
 📄 HTML completo salvo em: pique/briefings/{{data}}-pique-news.html
 ```

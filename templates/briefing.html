@@ -253,6 +253,10 @@
     font-size: 0.8rem; color: var(--accent-green);
     font-weight: 600; margin-top: 0.5rem;
   }
+  .gap-card.cronico { border-left-color: var(--accent); }
+  .gap-card.cronico .gap-title::before { content: '⚠ '; }
+  .gap-card.resolvido { border-left-color: var(--accent-green); opacity: 0.7; }
+  .gap-card.resolvido .gap-title { text-decoration: line-through; }
 
   /* ANIMATIONS */
   @keyframes fadeUp {
@@ -418,6 +422,29 @@
         </div>
         <a class="news-link" href="{{LINK}}" target="_blank">{{FONTE}} ↗</a>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== TENDENCIAS EM ANDAMENTO ====== -->
+<!-- Incluir esta section SOMENTE se o Passo 1.5 identificou tendencias (tema em 2+ briefings). Caso contrario, remover section inteira. -->
+<section id="tendencias">
+  <div class="section-inner">
+    <div class="section-label reveal">Acompanhamento</div>
+    <h2 class="section-title reveal">Tendencias em <span class="gradient-text">Andamento</span></h2>
+    <p class="section-subtitle reveal" style="margin-bottom: 2.5rem;">Temas que persistem entre briefings — o sinal ficando mais forte.</p>
+
+    <div class="news-grid">
+      <!-- Repetir para cada tendencia ativa -->
+      <div class="glass news-card ia reveal" style="border-left-color: var(--accent);">
+        <div class="news-tag" style="background: rgba(232, 148, 48, 0.15); color: var(--accent);">Tendencia — Dia {{N}}</div>
+        <div class="news-headline">{{TENDENCIA_NOME}}</div>
+        <div class="news-summary">{{TIMELINE: Dia 1 (DD/MM): ... → Dia 2 (DD/MM): ... → Hoje: ...}}</div>
+        <div class="news-insight">
+          <strong>Status:</strong> {{TENDENCIA_STATUS — confirmando / acelerando / estabilizando}}
+        </div>
+      </div>
+      <!-- /tendencia -->
     </div>
   </div>
 </section>
