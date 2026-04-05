@@ -6,6 +6,16 @@
       "env": {
         "APIFY_TOKEN": "${PIQUE_APIFY_TOKEN}"
       }
+    },
+    "pique-whatsapp": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/server.py"],
+      "env": {
+        "EVOLUTION_URL": "${PIQUE_EVOLUTION_URL}",
+        "EVOLUTION_API_KEY": "${PIQUE_EVOLUTION_API_KEY}",
+        "EVOLUTION_INSTANCE": "${PIQUE_EVOLUTION_INSTANCE}",
+        "DEFAULT_GROUP_ID": "${PIQUE_WHATSAPP_GROUP_ID}"
+      }
     }
   }
 }

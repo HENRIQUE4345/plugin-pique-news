@@ -1,6 +1,6 @@
 ---
 description: Briefing diario de noticias — scrapa portais, cruza com cerebro Pique/Yabadoo, gera HTML visual e envia resumo no WhatsApp.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors, mcp__docs-pique__upload_page, mcp__docs-pique__get_page_url, mcp__pique-whatsapp__send_whatsapp_message
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors, mcp__docs-pique__upload_page, mcp__docs-pique__get_page_url, mcp__plugin_plugin-pique-news_pique-whatsapp__send_whatsapp_message
 ---
 
 # Pique News — Briefing Diario
@@ -24,7 +24,7 @@ Nao e um agregador generico. E um filtro inteligente que conecta noticias ao tra
 Credenciais Evolution API NAO vivem mais no plugin — estao encapsuladas no MCP `pique-whatsapp` (env vars registradas no `.claude.json` / `claude_desktop_config.json`). O plugin so precisa chamar a tool.
 
 **Verificar:**
-- Tool `mcp__pique-whatsapp__send_whatsapp_message` disponivel? (envio WhatsApp)
+- Tool `mcp__plugin_plugin-pique-news_pique-whatsapp__send_whatsapp_message` disponivel? (envio WhatsApp)
 - Tool `mcp__docs-pique__upload_page` disponivel? (upload HTML)
 
 Se qualquer uma estiver indisponivel, marcar e continuar — os fallbacks dos Passos 4/5 lidam com ausencia delas. O briefing em si nao depende de nenhuma das duas (sempre gera HTML e grava backup local quando possivel).
@@ -308,7 +308,7 @@ _{{subtitulo — 1 linha instigante sobre o tema dominante do dia}}_
 Chamar a tool diretamente — o MCP encapsula credenciais, endpoint e encoding UTF-8:
 
 ```
-mcp__pique-whatsapp__send_whatsapp_message(
+mcp__plugin_plugin-pique-news_pique-whatsapp__send_whatsapp_message(
   text="{{teaser completo montado acima}}"
 )
 ```
