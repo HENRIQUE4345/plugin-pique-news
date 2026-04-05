@@ -21,18 +21,31 @@ Nao e um agregador generico. E um filtro inteligente que conecta noticias ao tra
 
 ## Passo 0 — Carregar configuracao
 
-Antes de tudo, carregue as credenciais da Evolution API. **Fonte unica de verdade:** `.suporte/credenciais.md` na raiz do cerebro (secao "Evolution API (WhatsApp — Pique News)"). O arquivo esta no .gitignore.
+O plugin roda em 2 ambientes:
+- **Claude Code local** no MEU-CEREBRO (cwd tem acesso ao cerebro)
+- **Claude Desktop / remoto** em sandbox (cwd = pasta isolada do plugin, SEM acesso ao cerebro)
 
-Ordem de busca:
+Por isso o Passo 0 tenta multiplas fontes. Precisa extrair 4 campos: **Evolution API URL, API Key, Instance, Group ID**.
 
-1. **`.suporte/credenciais.md`** (na raiz do cwd) — local canonico do cerebro. Parse a tabela da secao `### Evolution API` extraindo URL, API Key, Instance e Group ID.
-2. **Fallback legado:** `plugin-pique-news.local.md` na raiz do cwd (formato `**URL:** ...`, etc).
-3. **Fallback legado:** `config.local.md` na raiz do cwd (mesmo formato).
-4. **Ultimo recurso:** glob `**/plugin-pique-news.local.md`.
+### Ordem de busca
 
-Precisa extrair 4 campos: **Evolution API URL, API Key, Instance, Group ID**.
+1. **`.suporte/credenciais.md`** na raiz do cwd — secao `### Evolution API`. Funciona no Claude Code local (cwd = MEU-CEREBRO). Parse a tabela extraindo URL, API Key, Instance e Group ID.
 
-Se NAO encontrar em nenhum lugar, continue o briefing normalmente mas avise no final que o envio WhatsApp sera pulado (fallback do Passo 5).
+2. **`${CLAUDE_PLUGIN_ROOT}/config.local.md`** — arquivo dentro da pasta do plugin. Funciona em qualquer ambiente (local ou Desktop), desde que o arquivo tenha sido criado la apos a instalacao. Formato:
+   ```
+   **Evolution API URL:** https://evolution.pique.digital
+   **Evolution API Key:** {chave}
+   **Evolution Instance:** {instance}
+   **WhatsApp Group ID:** {group-id}
+   ```
+
+3. **Variaveis de ambiente** — rodar `echo "$EVOLUTION_URL|$EVOLUTION_API_KEY|$EVOLUTION_INSTANCE|$WHATSAPP_GROUP_ID"` via Bash e parsear. Funciona em qualquer ambiente que tenha as envs definidas (Desktop pode configurar em `claude_desktop_config.json`).
+
+4. **Fallback legado:** `config.local.md` ou `plugin-pique-news.local.md` na raiz do cwd.
+
+Se NAO encontrar em nenhuma fonte, continue o briefing normalmente mas avise no Passo 6 que o envio WhatsApp foi pulado. O briefing + upload pro docs.pique.digital ainda devem funcionar.
+
+**IMPORTANTE — ao reinstalar o plugin no Desktop:** o arquivo `config.local.md` dentro do plugin e apagado. Recriar manualmente uma vez por instalacao, OU configurar env vars no Desktop (persistentes).
 
 Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
@@ -60,14 +73,29 @@ Guarde os pontos-chave em memoria de trabalho. Voce vai precisar pra cruzar com 
 
 ## Passo 1.5 — Carregar memoria de briefings anteriores
 
-Antes de buscar noticias novas, leia o que ja foi reportado:
+Antes de buscar noticias novas, leia o que ja foi reportado. Tem 2 fontes possiveis (tente nessa ordem):
 
-1. **Glob** `pique/briefings/*-pique-news.html` — liste todos os briefings existentes.
-2. **Leia os 3 mais recentes** (por data no nome do arquivo). Se houver menos de 3, leia todos. Se nao houver nenhum, pule este passo inteiro.
-3. **De cada HTML, extraia:**
-   - Bloco `<!-- PIQUE-NEWS-METADATA ... -->` (se existir) — parse direto dele
-   - Se NAO tiver bloco de metadata (briefings antigos): ler os textos dentro de `.news-headline`, `.news-insight`, `.gap-title` + `.gap-action` do HTML
-4. **Monte 3 listas de trabalho:**
+### Fonte A — Drive local (Claude Code local)
+
+1. **Glob** `G:/Drives compartilhados/Pique Digital/Pique Digital/Pique News/*-pique-news.html`
+2. Se a pasta nao existir ou nao retornar resultados: passar pra Fonte B.
+
+### Fonte B — docs.pique.digital via WebFetch (qualquer ambiente, incluindo Desktop)
+
+1. **WebFetch** `https://docs.pique.digital/publico/pique/news/?json` — retorna JSON com a lista de arquivos/pastas. Estrutura: `{"paths": [{"name": "2026-04-04-pique-news-abc123", "mtime": ..., "path_type": "Dir"}, ...]}`.
+2. Ordenar por data no nome (ou `mtime`), pegar os 3 mais recentes.
+3. Pra cada um, **WebFetch** `https://docs.pique.digital/publico/pique/news/{slug}/` — traz o HTML do briefing.
+4. Se o fetch falhar (rede, 404, etc): pular este passo inteiro (briefing fresco sem memoria acumulativa).
+
+### Extracao (comum as 2 fontes)
+
+**Leia os 3 mais recentes.** Se houver menos de 3, leia todos. Se nao houver nenhum, pule este passo inteiro.
+
+**De cada HTML, extraia:**
+- Bloco `<!-- PIQUE-NEWS-METADATA ... -->` (se existir) — parse direto dele. Eh o mais eficiente.
+- Se NAO tiver bloco de metadata (briefings antigos): ler os textos dentro de `.news-headline`, `.news-insight`, `.gap-title` + `.gap-action` do HTML
+
+**Monte 3 listas de trabalho:**
 
 ### a) Noticias ja reportadas (titulos dos ultimos 3 dias)
 
@@ -220,11 +248,17 @@ noticias-chave: [titulos curtos separados por |]
 
 Esse bloco permite que o Passo 1.5 de execucoes futuras leia apenas as ultimas linhas do HTML em vez do arquivo inteiro.
 
-### Destino do arquivo (backup local)
+### Destino do arquivo (backup local — opcional)
 
-**Caminho:** `pique/briefings/{{YYYY-MM-DD}}-pique-news.html`
+**Caminho:** `G:/Drives compartilhados/Pique Digital/Pique Digital/Pique News/{{YYYY-MM-DD}}-pique-news.html`
 
-Sempre salvar localmente ANTES do upload. Esse backup alimenta a memoria acumulativa do Passo 1.5 em execucoes futuras (bloco de metadata). Se a pasta `pique/briefings/` nao existir, crie-a.
+Essa pasta eh o Drive compartilhado da Pique. Serve como backup acessivel pela equipe e pra memoria acumulativa do Passo 1.5.
+
+**Regra:** so salvar se o path existir e for gravavel (Claude Code local com Drive sincronizado). Em Desktop/remoto o Drive nao esta montado — **pular o backup local silenciosamente** e depender 100% do upload pro docs.pique.digital (Passo seguinte).
+
+**Verificacao rapida:** antes de salvar, `ls "G:/Drives compartilhados/Pique Digital/Pique Digital/Pique News/"` via Bash. Se retornar erro, pular. Se ok, Write no caminho.
+
+**NAO salvar em `pique/briefings/` no cerebro** (comportamento antigo removido — briefings nao ficam mais no cerebro local).
 
 ### Upload pra docs.pique.digital
 
@@ -285,7 +319,7 @@ _{{subtitulo — 1 linha instigante sobre o tema dominante do dia}}_
 4. **Sem links individuais por noticia.** So um link no final — o do briefing completo no docs.pique.digital.
 5. **Meta de tamanho:** < 900 caracteres totais. Leitura de 20 segundos no celular.
 6. **Tom:** direto, intrigante, sem hype gratuito. Nao usar "🚨 URGENTE" nem "VOCE PRECISA VER ISSO". O ganho e de curiosidade, nao de alarme.
-7. **Se o upload docs-pique falhou** (URL nao disponivel): substituir a ultima linha por `"📄 HTML salvo em pique/briefings/{{data}}-pique-news.html (upload publico falhou — ver localmente)"`.
+7. **Se o upload docs-pique falhou** (URL nao disponivel): substituir a ultima linha por `"📄 HTML salvo no Drive (upload publico falhou — ver Pique News/{{data}}-pique-news.html)"`. Se o backup local tambem falhou (Desktop sem Drive): avisar `"⚠️ Briefing gerado mas nao foi possivel publicar (docs-pique + Drive indisponiveis)"`.
 
 ### Enviar via Evolution API
 

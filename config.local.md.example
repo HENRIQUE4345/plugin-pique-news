@@ -1,0 +1,17 @@
+# Pique News — Configuracao Local (EXEMPLO)
+
+Copie este arquivo como `config.local.md` (sem `.example`) e preencha com as credenciais reais.
+O `config.local.md` esta no .gitignore — nao vai pro git.
+
+**Quando usar este arquivo:**
+- Claude Desktop / ambiente remoto onde nao ha acesso ao `.suporte/credenciais.md` do cerebro local
+- Recriar apos cada reinstalacao do plugin no Desktop (o arquivo some no uninstall)
+
+**Alternativa no Desktop:** configurar env vars `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WHATSAPP_GROUP_ID` em `claude_desktop_config.json` — persistem entre reinstalacoes.
+
+---
+
+**Evolution API URL:** https://evolution.pique.digital
+**Evolution API Key:** {SUA_API_KEY_AQUI}
+**Evolution Instance:** rique-tel
+**WhatsApp Group ID:** 120363407511722221@g.us
