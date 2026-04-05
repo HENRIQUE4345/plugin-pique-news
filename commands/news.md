@@ -1,6 +1,6 @@
 ---
 description: Briefing diario de noticias — scrapa portais, cruza com cerebro Pique/Yabadoo, gera HTML visual e envia resumo no WhatsApp.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors, mcp__docs-pique__upload_page, mcp__docs-pique__get_page_url
 ---
 
 # Pique News — Briefing Diario
@@ -220,55 +220,72 @@ noticias-chave: [titulos curtos separados por |]
 
 Esse bloco permite que o Passo 1.5 de execucoes futuras leia apenas as ultimas linhas do HTML em vez do arquivo inteiro.
 
-### Destino do arquivo
+### Destino do arquivo (backup local)
 
-**Destino do arquivo:** `pique/briefings/{{YYYY-MM-DD}}-pique-news.html`
+**Caminho:** `pique/briefings/{{YYYY-MM-DD}}-pique-news.html`
 
-Se a pasta `pique/briefings/` nao existir, crie-a.
+Sempre salvar localmente ANTES do upload. Esse backup alimenta a memoria acumulativa do Passo 1.5 em execucoes futuras (bloco de metadata). Se a pasta `pique/briefings/` nao existir, crie-a.
+
+### Upload pra docs.pique.digital
+
+Apos salvar o backup local, subir o HTML pro dufs via MCP `docs-pique`:
+
+```
+mcp__docs-pique__upload_page(
+  html="{conteudo completo do HTML}",
+  folder="pique/news",
+  visibility="publico",
+  title="pique-news"
+)
+```
+
+Resultado esperado: `{"url": "https://docs.pique.digital/publico/pique/news/YYYY-MM-DD-pique-news-{hash6}/", "status": "created", ...}`
+
+**Guarde o `url` retornado** — ele e o ponto central do Passo 5 (mensagem WhatsApp).
+
+**Fallbacks:**
+- MCP `docs-pique` nao disponivel → pular upload, marcar no Passo 6 que o link publico nao foi gerado, e no Passo 5 enviar so o teaser sem link (ou com aviso "HTML salvo localmente — upload falhou")
+- Upload retorna erro (401, 500, timeout) → mesmo comportamento
 
 ---
 
-## Passo 5 — Enviar no WhatsApp
+## Passo 5 — Enviar no WhatsApp (teaser, nao dump)
 
-Monte a mensagem de texto formatada para WhatsApp (nao suporta HTML):
+**Objetivo:** mensagem curta que gera curiosidade e manda pro link. NAO e pra entregar o briefing todo no WhatsApp — quem quiser o conteudo abre o link.
+
+Monte uma mensagem teaser com esta estrutura (formatacao WhatsApp, sem HTML):
 
 ```
-📡 *PIQUE NEWS — {{DATA}}*
+📡 *PIQUE NEWS — {{DATA_FORMATADA}}*
+_{{subtitulo — 1 linha instigante sobre o tema dominante do dia}}_
 
-🔥 *MANCHETE*
-▸ {{titulo}}
-  _{{resumo curto 1 linha}}_
-  💡 {{insight cruzado}}
-  🔗 {{link}}
+🔥 *{{MANCHETE_TITULO}}*
+{{hook de 1 linha — o *por que* a manchete importa, sem spoiler completo}}
 
-🤖 *IA / TECH*
-▸ {{titulo}} — {{insight 1 linha}}
-  🔗 {{link}}
-[repetir para cada noticia da categoria]
+📰 *No briefing de hoje*
+▸ {{hook noticia 1 — 1 linha instigante, estilo headline}}
+▸ {{hook noticia 2}}
+▸ {{hook noticia 3}}
+▸ {{hook noticia 4}}
+▸ {{hook noticia 5}}
 
-💼 *NEGOCIOS*
-[mesmo formato]
+📈 *Tendencia em alta:* {{nome tendencia ativa}}
+⚡ *Gap que pede acao:* {{gap titulo curto}}
 
-📱 *MARKETING*
-[mesmo formato]
-
-🔧 *FERRAMENTAS*
-[mesmo formato]
-
-⚡ *GAPS & OPORTUNIDADES*
-▸ {{gap titulo}} — {{acao sugerida}}
-[repetir]
-
-📈 *TENDENCIAS (acompanhamento)*
-▸ {{tendencia}} — dia {{N}}: {{evolucao 1 linha}}
-[repetir para cada tendencia ativa, ou omitir secao se nao houver]
-
-✅ *GAPS ATUALIZADOS*
-▸ {{gap}} — {{novo status: resolvido/avancou/cronico}}
-[repetir para cada gap com mudanca de status, ou omitir secao se nenhum gap mudou]
-
-📄 HTML completo salvo em: pique/briefings/{{data}}-pique-news.html
+👉 *Briefing completo:* {{URL_PUBLICO}}
 ```
+
+### Regras do teaser
+
+1. **Curiosidade > informacao completa.** Cada bullet e um *gancho*, nao um resumo. Estilo headline de jornal, nao paragrafo de noticia.
+   - Bom: `"▸ Anthropic lancou algo que muda o jogo de agentes autonomos"`
+   - Ruim: `"▸ Anthropic lancou Claude Agent SDK que permite criar agents com memoria persistente e ferramentas..."` (spoiler demais)
+2. **Maximo 5 bullets** na secao "No briefing de hoje". Escolher os mais *instigantes*, nao necessariamente os mais importantes.
+3. **Tendencia e Gap sao opcionais.** So incluir se houver tendencia ativa identificada pelo Passo 1.5 OU gap cronico/de alta prioridade. Se nao tiver, omitir as linhas inteiras.
+4. **Sem links individuais por noticia.** So um link no final — o do briefing completo no docs.pique.digital.
+5. **Meta de tamanho:** < 900 caracteres totais. Leitura de 20 segundos no celular.
+6. **Tom:** direto, intrigante, sem hype gratuito. Nao usar "🚨 URGENTE" nem "VOCE PRECISA VER ISSO". O ganho e de curiosidade, nao de alarme.
+7. **Se o upload docs-pique falhou** (URL nao disponivel): substituir a ultima linha por `"📄 HTML salvo em pique/briefings/{{data}}-pique-news.html (upload publico falhou — ver localmente)"`.
 
 ### Enviar via Evolution API
 
@@ -312,15 +329,17 @@ Substitua os placeholders pelos valores reais do config.local.md.
 
 Apos envio, informe:
 1. Total de noticias curadas
-2. Caminho do HTML salvo
-3. Status do envio WhatsApp (sucesso/falha)
-4. Se alguma camada de scraping falhou
+2. Caminho do HTML salvo (backup local)
+3. URL publica no docs.pique.digital (ou aviso de falha de upload)
+4. Status do envio WhatsApp (sucesso/falha)
+5. Se alguma camada de scraping falhou
 
 ---
 
 ## Fallbacks
 
 - **Apify MCP nao disponivel:** use WebFetch/WebSearch como alternativa
-- **Evolution API fora:** salve o HTML e informe que o envio falhou (tentar manualmente depois)
+- **docs-pique MCP fora:** pule o upload, envie a mensagem WhatsApp sem URL publica (ver Passo 5 regra 7), avise no Passo 6
+- **Evolution API fora:** salve o HTML, mantenha o upload pro docs-pique se funcionou (assim o link ainda e consultavel), e informe que o envio WhatsApp falhou
 - **Nenhuma noticia relevante:** gere briefing minimo com "Dia calmo — nenhuma noticia com impacto direto identificada" e envie mesmo assim (manter o habito)
 - **Cerebro nao acessivel:** gere briefing sem cruzamento, marcando "[sem cruzamento — cerebro indisponivel]" nos insights
