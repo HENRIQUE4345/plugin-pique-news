@@ -13,7 +13,7 @@ Scrapa portais, filtra pelo que importa, cruza com cerebro Pique/Yabadoo, gera H
 
 - **Apify** (MCP bundled): scraping de portais via `apify/rag-web-browser`
 - **docs-pique** (MCP user scope): upload de HTML pro dufs em docs.pique.digital
-- **Evolution API** (via curl): envio de mensagens no WhatsApp
+- **pique-whatsapp** (MCP user scope): envio de mensagens WhatsApp via Evolution API (credenciais encapsuladas no env do MCP — plugin nao precisa carregar nada)
 - **Cerebro Pique** (submodule): contexto de cruzamento (so Claude Code local)
 - **Google Drive sincronizado** (so local): backup HTMLs em `G:/Drives compartilhados/Pique Digital/Pique Digital/Pique News/`
 
@@ -21,10 +21,12 @@ Scrapa portais, filtra pelo que importa, cruza com cerebro Pique/Yabadoo, gera H
 
 O plugin roda em 2 contextos:
 
-| Ambiente | Cerebro | Drive | Credenciais |
-|----------|---------|-------|-------------|
-| Claude Code local (Windows Henrique) | ✓ | ✓ | `.suporte/credenciais.md` |
-| Claude Desktop / remoto | ✗ | ✗ | `${CLAUDE_PLUGIN_ROOT}/config.local.md` OU env vars |
+| Ambiente | Cerebro | Drive | Credenciais WhatsApp |
+|----------|---------|-------|---------------------|
+| Claude Code local (Windows Henrique) | ✓ | ✓ | MCP pique-whatsapp |
+| Claude Desktop / cowork | ✗ | ✗ | MCP pique-whatsapp |
+
+Em ambos os casos, o envio WhatsApp passa pelo MCP `pique-whatsapp` — credenciais vivem no env do MCP (registrado em `.claude.json` e `claude_desktop_config.json`), nao no plugin.
 
 No Desktop, o backup local (Drive) e pulado e a memoria acumulativa vem via WebFetch do `docs.pique.digital/publico/pique/news/?json`.
 
@@ -39,8 +41,9 @@ No Desktop, o backup local (Drive) e pulado e a memoria acumulativa vem via WebF
 1. NUNCA enviar mensagem no WhatsApp sem ter gerado o briefing completo primeiro
 2. Se uma camada de scraping falhar, continuar com as demais
 3. Mensagem WhatsApp = teaser curto + link publico. NAO e pra despejar o briefing todo no chat — quem quer ler abre o link.
-4. Se docs-pique MCP falhar, enviar o teaser sem link (ou avisar que HTML ficou so local)
-5. Se Evolution API falhar, salvar HTML e informar o usuario
-6. Maximo 15 noticias no briefing, maximo 5 bullets no teaser
-7. Todo insight deve ter cruzamento com cerebro real, nao generico
-8. Formato WhatsApp: emojis + *negrito* + _italico_ + 1 link (o publico)
+4. Envio WhatsApp SEMPRE via `mcp__pique-whatsapp__send_whatsapp_message`. Nunca curl direto.
+5. Se docs-pique MCP falhar, enviar o teaser sem link (ou avisar que HTML ficou so local)
+6. Se pique-whatsapp MCP falhar, briefing ainda publica no docs.pique.digital — so o envio e pulado
+7. Maximo 15 noticias no briefing, maximo 5 bullets no teaser
+8. Todo insight deve ter cruzamento com cerebro real, nao generico
+9. Formato WhatsApp: emojis + *negrito* + _italico_ + 1 link (o publico)

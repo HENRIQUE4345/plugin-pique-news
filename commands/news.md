@@ -1,6 +1,6 @@
 ---
 description: Briefing diario de noticias — scrapa portais, cruza com cerebro Pique/Yabadoo, gera HTML visual e envia resumo no WhatsApp.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors, mcp__docs-pique__upload_page, mcp__docs-pique__get_page_url
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash, WebFetch, WebSearch, mcp__plugin_plugin-pique-news_apify__call-actor, mcp__plugin_plugin-pique-news_apify__fetch-actor-details, mcp__plugin_plugin-pique-news_apify__get-actor-output, mcp__plugin_plugin-pique-news_apify__get-actor-run, mcp__plugin_plugin-pique-news_apify__search-actors, mcp__docs-pique__upload_page, mcp__docs-pique__get_page_url, mcp__pique-whatsapp__send_whatsapp_message
 ---
 
 # Pique News — Briefing Diario
@@ -19,33 +19,15 @@ NOTICIAS FRESCAS (ultimas 24h)  x  CONTEXTO PIQUE (clientes, catalogo, estrategi
 
 Nao e um agregador generico. E um filtro inteligente que conecta noticias ao trabalho real.
 
-## Passo 0 — Carregar configuracao
+## Passo 0 — Verificar MCPs disponiveis
 
-O plugin roda em 2 ambientes:
-- **Claude Code local** no MEU-CEREBRO (cwd tem acesso ao cerebro)
-- **Claude Desktop / remoto** em sandbox (cwd = pasta isolada do plugin, SEM acesso ao cerebro)
+Credenciais Evolution API NAO vivem mais no plugin — estao encapsuladas no MCP `pique-whatsapp` (env vars registradas no `.claude.json` / `claude_desktop_config.json`). O plugin so precisa chamar a tool.
 
-Por isso o Passo 0 tenta multiplas fontes. Precisa extrair 4 campos: **Evolution API URL, API Key, Instance, Group ID**.
+**Verificar:**
+- Tool `mcp__pique-whatsapp__send_whatsapp_message` disponivel? (envio WhatsApp)
+- Tool `mcp__docs-pique__upload_page` disponivel? (upload HTML)
 
-### Ordem de busca
-
-1. **`.suporte/credenciais.md`** na raiz do cwd — secao `### Evolution API`. Funciona no Claude Code local (cwd = MEU-CEREBRO). Parse a tabela extraindo URL, API Key, Instance e Group ID.
-
-2. **`${CLAUDE_PLUGIN_ROOT}/config.local.md`** — arquivo dentro da pasta do plugin. Funciona em qualquer ambiente (local ou Desktop), desde que o arquivo tenha sido criado la apos a instalacao. Formato:
-   ```
-   **Evolution API URL:** https://evolution.pique.digital
-   **Evolution API Key:** {chave}
-   **Evolution Instance:** {instance}
-   **WhatsApp Group ID:** {group-id}
-   ```
-
-3. **Variaveis de ambiente** — rodar `echo "$EVOLUTION_URL|$EVOLUTION_API_KEY|$EVOLUTION_INSTANCE|$WHATSAPP_GROUP_ID"` via Bash e parsear. Funciona em qualquer ambiente que tenha as envs definidas (Desktop pode configurar em `claude_desktop_config.json`).
-
-4. **Fallback legado:** `config.local.md` ou `plugin-pique-news.local.md` na raiz do cwd.
-
-Se NAO encontrar em nenhuma fonte, continue o briefing normalmente mas avise no Passo 6 que o envio WhatsApp foi pulado. O briefing + upload pro docs.pique.digital ainda devem funcionar.
-
-**IMPORTANTE — ao reinstalar o plugin no Desktop:** o arquivo `config.local.md` dentro do plugin e apagado. Recriar manualmente uma vez por instalacao, OU configurar env vars no Desktop (persistentes).
+Se qualquer uma estiver indisponivel, marcar e continuar — os fallbacks dos Passos 4/5 lidam com ausencia delas. O briefing em si nao depende de nenhuma das duas (sempre gera HTML e grava backup local quando possivel).
 
 Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
@@ -321,41 +303,31 @@ _{{subtitulo — 1 linha instigante sobre o tema dominante do dia}}_
 6. **Tom:** direto, intrigante, sem hype gratuito. Nao usar "🚨 URGENTE" nem "VOCE PRECISA VER ISSO". O ganho e de curiosidade, nao de alarme.
 7. **Se o upload docs-pique falhou** (URL nao disponivel): substituir a ultima linha por `"📄 HTML salvo no Drive (upload publico falhou — ver Pique News/{{data}}-pique-news.html)"`. Se o backup local tambem falhou (Desktop sem Drive): avisar `"⚠️ Briefing gerado mas nao foi possivel publicar (docs-pique + Drive indisponiveis)"`.
 
-### Enviar via Evolution API
+### Enviar via MCP pique-whatsapp
 
-**IMPORTANTE — Encoding UTF-8:** No Windows, o curl inline quebra emojis. SEMPRE usar o metodo abaixo (arquivo temporario):
+Chamar a tool diretamente — o MCP encapsula credenciais, endpoint e encoding UTF-8:
 
-1. Use o **Write tool** para criar um arquivo temporario `_whatsapp_msg.json` na raiz do working directory:
-
-```json
-{
-  "number": "WHATSAPP_GROUP_ID",
-  "text": "MENSAGEM_COMPLETA_AQUI"
-}
+```
+mcp__pique-whatsapp__send_whatsapp_message(
+  text="{{teaser completo montado acima}}"
+)
 ```
 
-2. Use o **Bash tool** com `--data-binary @arquivo` para enviar:
+O parametro `group_id` eh opcional — se omitido, a tool usa o `DEFAULT_GROUP_ID` do env do MCP (hoje: grupo Pique News). So passar `group_id` explicito se precisar enviar pra outro destino.
 
-```bash
-curl -s -X POST "EVOLUTION_URL/message/sendText/EVOLUTION_INSTANCE" \
-  -H "Content-Type: application/json; charset=utf-8" \
-  -H "apikey: EVOLUTION_API_KEY" \
-  --data-binary "@_whatsapp_msg.json"
-```
+**Retorno esperado:** `{"status": "sent", "group_id": "...", "http_code": 200, "message_key": {...}}`.
 
-3. Apague o arquivo temporario apos envio:
+**Se a tool retornar erro ou nao existir:**
+- Erro de rede/HTTP: marcar falha, seguir pro Passo 6
+- Tool indisponivel (MCP nao registrado): marcar pulado, seguir pro Passo 6
+- NUNCA fazer fallback pra curl manual — o MCP eh a unica forma suportada
 
-```bash
-rm _whatsapp_msg.json
-```
-
-Substitua os placeholders pelos valores reais do config.local.md.
-
-**Regras de formatacao:**
-- Use `*texto*` para negrito no WhatsApp
-- Use `_texto_` para italico
-- Quebre linhas com `\n` dentro do JSON
-- Se a mensagem for muito longa (>4000 chars), divida em 2 arquivos e envie com 2s de delay entre eles
+**Regras de formatacao (tudo ja no parametro `text`):**
+- `*texto*` para negrito
+- `_texto_` para italico
+- Quebras de linha com `\n` literais no string
+- Emojis unicode direto no texto (o MCP manda UTF-8 nativo)
+- Se a mensagem passar de ~4000 chars, dividir em 2 chamadas separadas da tool
 
 ---
 
@@ -373,7 +345,7 @@ Apos envio, informe:
 ## Fallbacks
 
 - **Apify MCP nao disponivel:** use WebFetch/WebSearch como alternativa
-- **docs-pique MCP fora:** pule o upload, envie a mensagem WhatsApp sem URL publica (ver Passo 5 regra 7), avise no Passo 6
-- **Evolution API fora:** salve o HTML, mantenha o upload pro docs-pique se funcionou (assim o link ainda e consultavel), e informe que o envio WhatsApp falhou
+- **docs-pique MCP fora:** pule o upload, envie o teaser sem URL publica (ver Passo 5 regra 7), avise no Passo 6
+- **pique-whatsapp MCP fora:** briefing ainda e gerado e publicado (se docs-pique funcionou); so o envio WhatsApp eh pulado. Avisar no Passo 6.
 - **Nenhuma noticia relevante:** gere briefing minimo com "Dia calmo — nenhuma noticia com impacto direto identificada" e envie mesmo assim (manter o habito)
 - **Cerebro nao acessivel:** gere briefing sem cruzamento, marcando "[sem cruzamento — cerebro indisponivel]" nos insights
