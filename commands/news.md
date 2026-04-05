@@ -21,14 +21,18 @@ Nao e um agregador generico. E um filtro inteligente que conecta noticias ao tra
 
 ## Passo 0 — Carregar configuracao
 
-Antes de tudo, leia o arquivo de configuracao da Evolution API.
-Tente nesta ordem ate encontrar:
-1. `plugin-pique-news.local.md` (na raiz do working directory)
-2. `config.local.md` (na raiz do working directory)
-3. Glob por `**/plugin-pique-news.local.md`
+Antes de tudo, carregue as credenciais da Evolution API. **Fonte unica de verdade:** `.suporte/credenciais.md` na raiz do cerebro (secao "Evolution API (WhatsApp — Pique News)"). O arquivo esta no .gitignore.
 
-O arquivo contem: Evolution API URL, API Key, Instance e WhatsApp Group ID.
-Se NAO encontrar, continue o briefing normalmente mas avise no final que o envio WhatsApp sera pulado.
+Ordem de busca:
+
+1. **`.suporte/credenciais.md`** (na raiz do cwd) — local canonico do cerebro. Parse a tabela da secao `### Evolution API` extraindo URL, API Key, Instance e Group ID.
+2. **Fallback legado:** `plugin-pique-news.local.md` na raiz do cwd (formato `**URL:** ...`, etc).
+3. **Fallback legado:** `config.local.md` na raiz do cwd (mesmo formato).
+4. **Ultimo recurso:** glob `**/plugin-pique-news.local.md`.
+
+Precisa extrair 4 campos: **Evolution API URL, API Key, Instance, Group ID**.
+
+Se NAO encontrar em nenhum lugar, continue o briefing normalmente mas avise no final que o envio WhatsApp sera pulado (fallback do Passo 5).
 
 Contexto de cruzamento:
 - **Cerebro Pique:** Submodule em `pique/` do MEU-CEREBRO
